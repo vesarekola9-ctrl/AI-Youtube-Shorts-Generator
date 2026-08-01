@@ -13,13 +13,10 @@ class Composer:
         os.makedirs(self.final_dir, exist_ok=True)
         self.transitions = ['fade', 'diagbr', 'diagtl']
 
-        # Määritetään oikea ffmpeg-komento / polku käyttöjärjestelmän mukaan
         if sys.platform.startswith('win'):
-            # Windows (oma koneesi, oletetaan että ffmpeg on PATHissa tai C:\ffmpeg)
             self.ffmpeg_cmd = 'ffmpeg'
             self.ffprobe_cmd = 'ffprobe'
         else:
-            # Linux / GitHub Actions (Ubuntu)
             self.ffmpeg_cmd = '/usr/bin/ffmpeg'
             self.ffprobe_cmd = '/usr/bin/ffprobe'
 
