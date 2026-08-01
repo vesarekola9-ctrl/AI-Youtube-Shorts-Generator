@@ -1,5 +1,7 @@
 import os
 import json
+import google.auth.transport.requests
+import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.http
@@ -12,9 +14,10 @@ class YouTubeUploader:
         self.API_SERVICE_NAME = "youtube"
         self.API_VERSION = "v3"
         self.CLIENT_SECRETS_FILE = "client_secret.json"
+        self.TOKEN_FILE = "token.json"
 
-    def _setup_client_secret_file(self):
-        """Luo client_secret.json lennosta GitHub Secrets -ympäristömuuttujasta, jos sitä ei ole."""
+    def _setup_files(self):
+        # 1. Luodaan client_secret.json lennosta
         if not os.path.exists(self.CLIENT_SECRETS_FILE):
             secret_content = os.getenv("YOUTUBE_CLIENT_SECRET_JSON")
             if secret_content:
@@ -24,12 +27,20 @@ class YouTubeUploader:
             else:
                 print("⚠️ Varoitus: Ympäristömuuttujaa YOUTUBE_CLIENT_SECRET_JSON ei löytynyt.")
 
-    def upload_short(self, video_path, title="Automated YouTube Short #Shorts", description="Generated automatically with AI AutoShorts AI 🚀"):
+        # 2. Luodaan token.json lennosta (jos sellainen on tallennettu GitHub Secretsiin)
+        if not os.path.exists(self.TOKEN_FILE):
+            token_content = os.getenv("YOUTUBE_TOKEN_JSON")
+            if token_content:
+                with open(self.TOKEN_FILE, "w") as f:
+                    f.write(token_content)
+                print("⚙️ Luotu token.json ympäristömuuttujasta.")
+
+    def upload_short(self, video_path, title="Automated YouTube Short #Shorts", description="Generated automatically with AI AutoShorts 🚀"):
         if not os.path.exists(video_path):
             print(f"❌ Upload Error: Video file not found at {video_path}")
             return
 
-        self._setup_client_secret_file()
+        self._setup_files()
 
         if not os.path.exists(self.CLIENT_SECRETS_FILE):
             print(f"❌ Upload Error: Missing '{self.CLIENT_SECRETS_FILE}'!")
@@ -38,11 +49,29 @@ class YouTubeUploader:
         print("🚀 Starting YouTube Upload process...")
 
         try:
-            flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-                self.CLIENT_SECRETS_FILE, self.SCOPES
-            )
-            credentials = flow.run_local_server(port=0)
+            credentials = None
             
+            # Yritetään ladata aiemmin tallennettu token
+            if os.path.exists(self.TOKEN_FILE):
+                credentials = google.oauth2.credentials.Credentials.from_authorized_user_file(
+                    self.TOKEN_FILE, self.SCOPES
+                )
+
+            # Jos tokeneita ei ole tai ne ovat vanhentuneita/virheellisiä
+            if not credentials or not credentials.valid:
+                if credentials and credentials.expired and credentials.refresh_token:
+                    credentials.refresh(google.auth.transport.requests.Request())
+                else:
+                    # Jos ajetaan paikallisesti koneella, voidaan käyttää selainta
+                    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+                        self.CLIENT_SECRETS_FILE, self.SCOPES
+                    )
+                    credentials = flow.run_local_server(port=0)
+                
+                # Tallennetaan token paikallisesti uusiokäyttöä varten
+                with open(self.TOKEN_FILE, "w") as token:
+                    token.write(credentials.to_json())
+
             youtube = googleapiclient.discovery.build(
                 self.API_SERVICE_NAME, self.API_VERSION, credentials=credentials
             )
