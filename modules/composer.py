@@ -83,7 +83,12 @@ class Composer:
                 shortest=None
             )
             
+            # PAKOTETAAN KOMENTO KÄYTTÄMÄÄN SUORAAN OIKEAA BINÄÄRIÄ ILMAN KIRJASTON PIILOMETOODEJA
             args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
+            
+            # Vaihdetaan komennon ensimmäinen alkio suoraan binäärin poluksi
+            args[0] = self.ffmpeg_cmd
+            
             subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             return output_path
 
@@ -177,6 +182,7 @@ class Composer:
             )
             
             args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
+            args[0] = self.ffmpeg_cmd
             subprocess.run(args, check=True)
             print(f"✅ FINAL VIDEO SAVED: {output_path}")
             return output_path
