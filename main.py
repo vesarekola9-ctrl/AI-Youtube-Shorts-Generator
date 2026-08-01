@@ -1,5 +1,8 @@
-import asyncio
 import os
+# Varmistetaan ffmpeg polku Ubuntussa / GitHub Actionsissa
+os.environ["PATH"] += os.pathsep + "/usr/bin"
+
+import asyncio
 import shutil
 from modules.brain import ContentBrain
 from modules.asset_manager import AssetManager
@@ -27,7 +30,6 @@ def clean_cache():
             continue
             
         # SAFETY CHECK 2: Double check we are inside our project "assets" folder
-        # This prevents the script from ever touching C:\ or System32
         if "assets" not in folder:
             print(f"   🚨 SECURITY ALERT: Skipping {folder} because it looks unsafe!")
             continue
@@ -39,7 +41,7 @@ def clean_cache():
             try:
                 if os.path.isfile(file_path) or os.path.islink(file_path):
                     os.unlink(file_path) # Delete the file
-                    print(f"      Deleted: {filename}") # Print so you can see it working
+                    print(f"      Deleted: {filename}")
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path) # Delete subfolders if any
             except Exception as e:
