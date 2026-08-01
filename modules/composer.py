@@ -1,18 +1,7 @@
 import os
-import sys
-
-# 🔥 PAKOTETAAN FFMPEG POLKU LÖYTYMÄÄN LINUXISSA / GITHUB ACTIONFISSA
-if not sys.platform.startswith('win'):
-    import subprocess
-    try:
-        # Etsitään missä ffmpeg on järjestelmässä (yleensä /usr/bin/ffmpeg)
-        ffmpeg_bin = subprocess.check_output(['which', 'ffmpeg']).decode('utf-8').strip()
-        ffmpeg_dir = os.path.dirname(ffmpeg_bin)
-        os.environ["PATH"] += os.pathsep + ffmpeg_dir
-    except:
-        os.environ["PATH"] += os.pathsep + "/usr/bin" + os.pathsep + "/usr/local/bin"
-
 import random
+import sys
+import subprocess
 import ffmpeg
 
 class Composer:
@@ -87,12 +76,14 @@ class Composer:
                 shortest=None
             )
             
-            runner.run(overwrite_output=True, quiet=True)
+            # KÄYTETÄÄN SUORAAN FFMPEG-KOMENTOJA ILMAN KIRJASTON PIILOMETOODEJA
+            args = ffmpeg.compile(runner)
+            args[0] = 'ffmpeg'
+            subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             return output_path
 
-        except ffmpeg.Error as e:
-            err_msg = e.stderr.decode('utf8', errors='ignore') if e.stderr else str(e)
-            print(f"❌ Render Fail Scene {scene_id}: {err_msg}")
+        except Exception as e:
+            print(f"❌ Render Fail Scene {scene_id}: {str(e)}")
             return None
 
     def render_all_scenes(self, script_data, video_pairs):
@@ -180,11 +171,12 @@ class Composer:
                 preset='medium' 
             )
             
-            runner.run(overwrite_output=True, quiet=False)
+            args = ffmpeg.compile(runner)
+            args[0] = 'ffmpeg'
+            subprocess.run(args, check=True)
             print(f"✅ FINAL VIDEO SAVED: {output_path}")
             return output_path
 
-        except ffmpeg.Error as e:
-            error_log = e.stderr.decode('utf8', errors='ignore') if e.stderr else str(e)
-            print(f"❌ Stitching Error: {error_log}")
+        except Exception as e:
+            print(f"❌ Stitching Error: {str(e)}")
             return None
