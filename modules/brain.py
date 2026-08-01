@@ -1,5 +1,6 @@
-﻿import os
+import os
 import json
+import random
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -13,18 +14,34 @@ def _get_client():
 
 class ContentBrain:
     def get_trending_topic(self):
-        prompts = "Give me 1 specific, viral, and engaging topic for a Short Documentary. Return ONLY the topic name."
+        # Satunnaistetaan kategoria, jotta aiheet vaihtuvat aina radikaalisti
+        categories = [
+            "mind-blowing science facts",
+            "unsolved historical mysteries",
+            "dark psychological tricks",
+            "bizarre natural phenomena",
+            "future technology & space",
+            "strange human body facts",
+            "hidden historical secrets"
+        ]
+        chosen_category = random.choice(categories)
+        
+        prompts = (
+            f"Give me 1 specific, highly engaging, and unique topic from the category: '{chosen_category}'. "
+            "Make sure it's completely different from mainstream general topics. Return ONLY the topic name."
+        )
+        
         client = _get_client()
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "You are a creative content curator."},
+                {"role": "system", "content": "You are a creative content curator who loves obscure, fascinating, and unique topics."},
                 {"role": "user", "content": prompts}
             ],
-            temperature=0.5,
+            temperature=0.8, # Nostettu satunnaisuutta, jotta tulee aina uusia aiheita
         )
         topic = completion.choices[0].message.content.strip().replace('"', '')
-        print(f"🎯 Selected Topic: {topic}")
+        print(f"🎯 Selected Topic [{chosen_category}]: {topic}")
         return topic
 
     def generate_script(self, topic):
@@ -53,7 +70,7 @@ class ContentBrain:
                 {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.2,
+            temperature=0.3,
         )
         
         response_text = completion.choices[0].message.content.strip()
