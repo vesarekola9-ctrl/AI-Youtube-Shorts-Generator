@@ -1,4 +1,4 @@
-import os
+﻿import os
 import random
 import sys
 import subprocess
@@ -83,7 +83,6 @@ class Composer:
                 shortest=None
             )
             
-            # KÄYTETÄÄN SUORAAN TURVALLISTA AJOA EIKÄ KIRJASTON PIILOMETODEJA
             args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
             subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             return output_path
