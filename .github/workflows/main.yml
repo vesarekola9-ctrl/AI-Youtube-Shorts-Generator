@@ -18,24 +18,23 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install everything and run generator
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          YOUTUBE_CLIENT_SECRET_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      - name: Install FFmpeg and system dependencies
         run: |
-          echo "🚀 Asennetaan järjestelmäriippuvuudet (ffmpeg)..."
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          
-          echo "📦 Asennetaan Python-kirjastot..."
+          ffmpeg -version
+
+      - name: Install Python dependencies
+        run: |
           python -m pip install --upgrade pip
           pip install groq google-genai edge-tts requests ffmpeg-python mutagen google-auth-oauthlib google-auth-httplib2 google-api-python-client python-dotenv
-          
-          echo "🔑 Luodaan .env tiedosto..."
+
+      - name: Create .env file from Secrets
+        run: |
           echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> .env
           echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
           echo "YOUTUBE_CLIENT_SECRET_JSON='${{ secrets.YOUTUBE_CLIENT_SECRET }}'" >> .env
-          
-          echo "▶️ Käynnistetään Short Generator..."
+
+      - name: Run Short Generator
+        run: |
           python main.py
