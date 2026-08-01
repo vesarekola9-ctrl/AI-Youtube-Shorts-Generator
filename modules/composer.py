@@ -82,7 +82,7 @@ class Composer:
                 shortest=None
             )
             
-            # Kutsutaan suoraan giljotiinityylillä omalla komennolla
+            # 🔥 Käytetään suoraan ffmpeg.run ja välitetään cmd-parametri
             ffmpeg.run(runner, cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=True)
             return output_path
 
