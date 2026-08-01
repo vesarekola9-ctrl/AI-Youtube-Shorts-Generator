@@ -1,7 +1,18 @@
 import os
-import random
 import sys
-import subprocess
+
+# 🔥 PAKOTETAAN FFMPEG POLKU LÖYTYMÄÄN LINUXISSA / GITHUB ACTIONFISSA
+if not sys.platform.startswith('win'):
+    import subprocess
+    try:
+        # Etsitään missä ffmpeg on järjestelmässä (yleensä /usr/bin/ffmpeg)
+        ffmpeg_bin = subprocess.check_output(['which', 'ffmpeg']).decode('utf-8').strip()
+        ffmpeg_dir = os.path.dirname(ffmpeg_bin)
+        os.environ["PATH"] += os.pathsep + ffmpeg_dir
+    except:
+        os.environ["PATH"] += os.pathsep + "/usr/bin" + os.pathsep + "/usr/local/bin"
+
+import random
 import ffmpeg
 
 class Composer:
@@ -14,16 +25,9 @@ class Composer:
         os.makedirs(self.final_dir, exist_ok=True)
         self.transitions = ['fade', 'diagbr', 'diagtl']
 
-        if sys.platform.startswith('win'):
-            self.ffmpeg_cmd = 'ffmpeg'
-            self.ffprobe_cmd = 'ffprobe'
-        else:
-            self.ffmpeg_cmd = '/usr/bin/ffmpeg'
-            self.ffprobe_cmd = '/usr/bin/ffprobe'
-
     def get_duration(self, filepath):
         try:
-            probe = ffmpeg.probe(filepath, cmd=self.ffprobe_cmd)
+            probe = ffmpeg.probe(filepath)
             return float(probe['format']['duration'])
         except:
             return 0.0
@@ -83,13 +87,12 @@ class Composer:
                 shortest=None
             )
             
-            args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
-            args[0] = self.ffmpeg_cmd
-            subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            runner.run(overwrite_output=True, quiet=True)
             return output_path
 
-        except Exception as e:
-            print(f"❌ Render Fail Scene {scene_id}: {str(e)}")
+        except ffmpeg.Error as e:
+            err_msg = e.stderr.decode('utf8', errors='ignore') if e.stderr else str(e)
+            print(f"❌ Render Fail Scene {scene_id}: {err_msg}")
             return None
 
     def render_all_scenes(self, script_data, video_pairs):
@@ -177,12 +180,11 @@ class Composer:
                 preset='medium' 
             )
             
-            args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
-            args[0] = self.ffmpeg_cmd
-            subprocess.run(args, check=True)
+            runner.run(overwrite_output=True, quiet=False)
             print(f"✅ FINAL VIDEO SAVED: {output_path}")
             return output_path
 
-        except Exception as e:
-            print(f"❌ Stitching Error: {str(e)}")
+        except ffmpeg.Error as e:
+            error_log = e.stderr.decode('utf8', errors='ignore') if e.stderr else str(e)
+            print(f"❌ Stitching Error: {error_log}")
             return None
