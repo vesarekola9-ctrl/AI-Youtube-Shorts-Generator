@@ -1,4 +1,8 @@
 import os
+
+# 🔥 FIX: Pakotetaan ffmpeg-kirjasto löytämään järjestelmän asennus Linuxissa / GitHub Actionsissa
+os.environ["PATH"] += os.pathsep + "/usr/bin" + os.pathsep + "/usr/local/bin"
+
 import random
 import ffmpeg
 
@@ -45,7 +49,6 @@ class Composer:
                     # ---------------------------------------------------------
                     # ✂️ LOGO REMOVAL CROP
                     # ---------------------------------------------------------
-                    # Current setting: Removes 150px from BOTTOM.
                     .filter('crop', 'iw', 'ih-150', 0, 0) 
                     
                     # ---------------------------------------------------------
@@ -106,18 +109,14 @@ class Composer:
         rendered_paths = []
         
         # 1. Randomly pick TWO distinct middle scenes for the Avatar
-        # We pick from range [1, len-2] to avoid the Hook (0) and Outro (last)
         avatar_indices = []
         
-        # Only inject if we have enough scenes (need at least 4 scenes to safely pick 2 middle ones)
         if len(script_data) >= 4 and os.path.exists(self.avatar_path):
-            valid_range = list(range(1, len(script_data) - 1)) # All valid middle indices
+            valid_range = list(range(1, len(script_data) - 1))
             
-            # Pick 2 unique indices if possible, otherwise just 1
             count_to_pick = 2 if len(valid_range) >= 2 else 1
             avatar_indices = random.sample(valid_range, count_to_pick)
             
-            # Sort them just for cleaner logging
             avatar_indices.sort()
             human_readable_indices = [i + 1 for i in avatar_indices]
             print(f"🎲 Avatar set for Scenes: {human_readable_indices}")
@@ -127,7 +126,6 @@ class Composer:
             current_pair = video_pairs[i]
             is_avatar = False
 
-            # Injection Logic: Check if current index is in our chosen list
             if i in avatar_indices:
                 current_pair = (self.avatar_path, None)
                 is_avatar = True
@@ -143,7 +141,6 @@ class Composer:
     def concatenate_with_transitions(self, video_paths, output_filename="final_short.mp4"):
         """
         Stitches rendered scenes together.
-        INCLUDES FIXES FOR: Windows 0x80004005 Error & Playback Issues.
         """
         print("🎬 Stitching final video...")
         output_path = os.path.join(self.final_dir, output_filename)
@@ -194,10 +191,10 @@ class Composer:
                 v_stream, 
                 a_stream, 
                 output_path, 
-                vcodec='libx264',   # Standard H.264 video
-                acodec='aac',       # Standard AAC audio
-                pix_fmt='yuv420p',  # 🔥 FIX 1: Windows compatibility
-                movflags='faststart', # 🔥 FIX 2: Corruption fix
+                vcodec='libx264',    
+                acodec='aac',        
+                pix_fmt='yuv420p',  
+                movflags='faststart', 
                 preset='medium' 
             )
             
