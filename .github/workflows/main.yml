@@ -28,6 +28,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-          GEMINI_MODEL: gemini-2.5-flash
+          GEMINI_MODEL: gemini-2.0-flash
         run: |
           python main.py
