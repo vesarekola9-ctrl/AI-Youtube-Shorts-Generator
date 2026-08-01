@@ -25,11 +25,7 @@ class Composer:
             probe = ffmpeg.probe(filepath, cmd=self.ffprobe_cmd)
             return float(probe['format']['duration'])
         except:
-            try:
-                probe = ffmpeg.probe(filepath)
-                return float(probe['format']['duration'])
-            except:
-                return 0.0
+            return 0.0
 
     def process_scene(self, scene, video_pair, is_avatar=False):
         scene_id = scene['id']
@@ -86,7 +82,8 @@ class Composer:
                 shortest=None
             )
             
-            runner.run(cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=True)
+            # Kutsutaan suoraan giljotiinityylillä omalla komennolla
+            ffmpeg.run(runner, cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=True)
             return output_path
 
         except ffmpeg.Error as e:
@@ -179,7 +176,7 @@ class Composer:
                 preset='medium' 
             )
             
-            runner.run(cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=False)
+            ffmpeg.run(runner, cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=False)
             print(f"✅ FINAL VIDEO SAVED: {output_path}")
             return output_path
 
