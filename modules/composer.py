@@ -1,6 +1,7 @@
 import os
 import random
 import sys
+import subprocess
 import ffmpeg
 
 class Composer:
@@ -82,13 +83,13 @@ class Composer:
                 shortest=None
             )
             
-            # 🔥 Käytetään suoraan ffmpeg.run ja välitetään cmd-parametri
-            ffmpeg.run(runner, cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=True)
+            # KÄYTETÄÄN SUORAAN TURVALLISTA AJOA EIKÄ KIRJASTON PIILOMETODEJA
+            args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
+            subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             return output_path
 
-        except ffmpeg.Error as e:
-            err_msg = e.stderr.decode('utf8', errors='ignore') if e.stderr else str(e)
-            print(f"❌ Render Fail Scene {scene_id}: {err_msg}")
+        except Exception as e:
+            print(f"❌ Render Fail Scene {scene_id}: {str(e)}")
             return None
 
     def render_all_scenes(self, script_data, video_pairs):
@@ -176,11 +177,11 @@ class Composer:
                 preset='medium' 
             )
             
-            ffmpeg.run(runner, cmd=self.ffmpeg_cmd, overwrite_output=True, quiet=False)
+            args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
+            subprocess.run(args, check=True)
             print(f"✅ FINAL VIDEO SAVED: {output_path}")
             return output_path
 
-        except ffmpeg.Error as e:
-            error_log = e.stderr.decode('utf8', errors='ignore') if e.stderr else str(e)
-            print(f"❌ Stitching Error: {error_log}")
+        except Exception as e:
+            print(f"❌ Stitching Error: {str(e)}")
             return None
