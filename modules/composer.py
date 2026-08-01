@@ -1,4 +1,4 @@
-﻿import os
+import os
 import random
 import sys
 import subprocess
@@ -6,9 +6,9 @@ import ffmpeg
 
 class Composer:
     def __init__(self):
-        self.temp_dir = os.path.join(os.getcwd(), "assets", "temp")
-        self.final_dir = os.path.join(os.getcwd(), "assets", "final")
-        self.avatar_path = os.path.join(os.getcwd(), "assets", "avatar", "avatars.mp4")
+        self.temp_dir = os.path.join(os.getcwd(), 'assets', 'temp')
+        self.final_dir = os.path.join(os.getcwd(), 'assets', 'final')
+        self.avatar_path = os.path.join(os.getcwd(), 'assets', 'avatar', 'avatars.mp4')
         
         os.makedirs(self.temp_dir, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
@@ -32,13 +32,13 @@ class Composer:
         scene_id = scene['id']
         audio_path = scene['audio_path']
         total_duration = scene['duration']
-        output_path = os.path.join(self.temp_dir, f"scene_{scene_id}.mp4")
+        output_path = os.path.join(self.temp_dir, f'scene_{scene_id}.mp4')
 
         try:
             input_audio = ffmpeg.input(audio_path)
 
             if is_avatar:
-                print(f"   ⚙️ Processing Scene {scene_id}: 🤖 Avatar Mode (Cropped)")
+                print(f'   ⚙️ Processing Scene {scene_id}: 🤖 Avatar Mode (Cropped)')
                 video_stream = (
                     ffmpeg.input(video_pair[0], stream_loop=-1)
                     .trim(duration=total_duration + 0.5)
@@ -49,7 +49,7 @@ class Composer:
                     .filter('fps', fps=30, round='up')
                 )
             else:
-                print(f"   ⚙️ Processing Scene {scene_id}: 🎞️ A/B Split Mode")
+                print(f'   ⚙️ Processing Scene {scene_id}: 🎞️ A/B Split Mode')
                 path_a, path_b = video_pair
                 
                 duration_a = total_duration / 2
@@ -89,7 +89,7 @@ class Composer:
             return output_path
 
         except Exception as e:
-            print(f"❌ Render Fail Scene {scene_id}: {str(e)}")
+            print(f'❌ Render Fail Scene {scene_id}: {str(e)}')
             return None
 
     def render_all_scenes(self, script_data, video_pairs):
@@ -102,7 +102,7 @@ class Composer:
             avatar_indices = random.sample(valid_range, count_to_pick)
             avatar_indices.sort()
             human_readable_indices = [i + 1 for i in avatar_indices]
-            print(f"🎲 Avatar set for Scenes: {human_readable_indices}")
+            print(f'🎲 Avatar set for Scenes: {human_readable_indices}')
 
         for i, scene in enumerate(script_data):
             current_pair = video_pairs[i]
@@ -120,8 +120,8 @@ class Composer:
         
         return rendered_paths
 
-    def concatenate_with_transitions(self, video_paths, output_filename="final_short.mp4"):
-        print("🎬 Stitching final video...")
+    def concatenate_with_transitions(self, video_paths, output_filename='final_short.mp4'):
+        print('🎬 Stitching final video...')
         output_path = os.path.join(self.final_dir, output_filename)
         
         if os.path.exists(output_path):
@@ -147,7 +147,7 @@ class Composer:
             offset = current_dur - trans_dur
             
             effect = random.choice(self.transitions)
-            print(f"   ✨ Transition {i}: '{effect}' at {offset:.2f}s")
+            print(f'   ✨ Transition {i}: "{effect}" at {offset:.2f}s')
 
             v_stream = ffmpeg.filter(
                 [v_stream, next_clip.video], 
@@ -180,9 +180,9 @@ class Composer:
             args = ffmpeg.compile(runner, cmd=self.ffmpeg_cmd)
             args[0] = self.ffmpeg_cmd
             subprocess.run(args, check=True)
-            print(f"✅ FINAL VIDEO SAVED: {output_path}")
+            print(f'✅ FINAL VIDEO SAVED: {output_path}')
             return output_path
 
         except Exception as e:
-            print(f"❌ Stitching Error: {str(e)}")
+            print(f'❌ Stitching Error: {str(e)}')
             return None
