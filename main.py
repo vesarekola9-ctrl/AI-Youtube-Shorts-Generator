@@ -1,10 +1,12 @@
 import asyncio
+import os
+import shutil
 from modules.brain import ContentBrain
 from modules.asset_manager import AssetManager
 from modules.audio import AudioEngine
 from modules.composer import Composer
-import os
-import shutil
+from modules.upload import YouTubeUploader
+
 def clean_cache():
     """
     Safely deletes temporary files.
@@ -80,8 +82,16 @@ async def main():
 
     # 5. STITCH WITH TRANSITIONS
     if final_scene_paths:
-        # CHANGED: Now using the transition function instead of simple concat
         composer.concatenate_with_transitions(final_scene_paths)
+        
+        # 6. YOUTUBE UPLOAD
+        print("🚀 Siirrytään YouTubeen lataamiseen...")
+        try:
+            uploader = YouTubeUploader()
+            uploader.upload_short("assets/final/final_short.mp4")
+        except Exception as e:
+            print(f"❌ YouTube Upload Error: {e}")
+
         clean_cache()
     else:
         print("❌ Failed to generate any scenes.")
