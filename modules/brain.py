@@ -33,12 +33,12 @@ class ContentBrain:
         
         client = _get_client()
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-70b-versatile",  # <-- KORJATTU TÄHÄN
             messages=[
                 {"role": "system", "content": "You are a creative content curator who loves obscure, fascinating, and unique topics."},
                 {"role": "user", "content": prompts}
             ],
-            temperature=0.8, # Nostettu satunnaisuutta, jotta tulee aina uusia aiheita
+            temperature=0.8,
         )
         topic = completion.choices[0].message.content.strip().replace('"', '')
         print(f"🎯 Selected Topic [{chosen_category}]: {topic}")
@@ -65,7 +65,7 @@ class ContentBrain:
 
         client = _get_client()
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-70b-versatile",  # <-- KORJATTU MYÖS TÄHÄN
             messages=[
                 {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
                 {"role": "user", "content": prompt}
