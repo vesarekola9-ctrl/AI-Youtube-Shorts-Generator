@@ -51,7 +51,7 @@ class ContentBrain:
             "Output ONLY a valid JSON array and nothing else. No markdown formatting, no explanations.\n"
             "Create a short 5-scene script for a YouTube Short about this topic:\n"
             f"Topic: {topic}\n\n"
-            "Keep the 'text' fields short (max 1-2 sentences per scene). Do not repeat words.\n"
+            "Keep the 'text' fields very short and concise.\n"
             "Required JSON format:\n"
             "[\n"
             "    {\n"
@@ -68,11 +68,11 @@ class ContentBrain:
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[
-                {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks. Keep text concise to avoid token limits."},
+                {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=1000,
+            max_tokens=2000,  # Nostettu tarpeeksi suureksi, ettei katkea kesken!
         )
         
         response_text = completion.choices[0].message.content.strip()
