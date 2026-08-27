@@ -24,7 +24,6 @@ ARTIST_SONGS = [
 ]
 
 def get_unique_title_and_description(song):
-    """Luo jokaiselle videolle täysin uniikin otsikon ja kuvauksen biisin mukaan."""
     titles = [
         f"Fiilistelyä: {song['title']} #Shorts",
         f"Musafiiliksiä - {song['title']} #Music",
@@ -85,7 +84,7 @@ async def main():
         print("❌ Script generation failed.")
         return
 
-    # Korjataan skriptin kohtaukset, jotta composer ei kaadu puuttuavaan audio_path:iin
+    # Varmistetaan että skripti on oikeassa muodossa ja lisätään tarvittavat kentät (duration & audio_path)
     if isinstance(script, list):
         scenes = script
     elif isinstance(script, dict) and "scenes" in script:
@@ -95,7 +94,8 @@ async def main():
 
     for scene in scenes:
         if isinstance(scene, dict):
-            scene['audio_path'] = None # Estetään KeyError
+            scene['audio_path'] = None
+            scene['duration'] = 5  # Asetetaan jokaiselle kohtaukselle 5 sekunnin kesto, ettei tule KeyError
 
     # 2. ASSETS: Get Stock Video
     asset_manager = AssetManager()
@@ -109,11 +109,10 @@ async def main():
     if final_scene_paths:
         composer.concatenate_with_transitions(final_scene_paths, music_url=current_song["url"])
         
-        # 5. YOUTUBE UPLOAD (Käytetään uniikkia otsikkoa!)
+        # 5. YOUTUBE UPLOAD
         print("🚀 Siirrytään YouTubeen lataamiseen...")
         try:
             uploader = YouTubeUploader()
-            # Varmistetaan että uploader käyttää dynaamista otsikkoa
             uploader.upload_short("assets/final/final_short.mp4", title=video_title, description=video_desc)
             print("✅ Video ladattu onnistuneesti uudella nimellä ja kuvauksella!")
         except Exception as e:
