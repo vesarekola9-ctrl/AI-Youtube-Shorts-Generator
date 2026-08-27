@@ -47,11 +47,27 @@ class ContentBrain:
     def generate_script(self, topic):
         print(f"📝 Writing script for: {topic}...")
         
+        # Tarkistetaan onko kyseessä artistin muistolaulu/musavideo
+        is_memorial_song = "musavideo" in topic.lower() or "kappaleelle" in topic.lower()
+        
+        if is_memorial_song:
+            system_content = (
+                "You are a poetic and respectful music video director creating visual concepts for memorial songs dedicated to deceased loved ones. "
+                "The visual search terms (`visual_1`, `visual_2`) must ALWAYS be serene, respectful, and emotional "
+                "(e.g., peaceful nature, misty forest, northern mountains, flickering candle, glowing sunset, starry night, autumn leaves, quiet lake)."
+            )
+            guideline = (
+                f"Create a short 5-scene script for a music video based on this tribute song: '{topic}'.\n"
+                "Ensure the text fields are touching, short, and respectful, focusing on memories, love, and loss.\n"
+                "The visual search terms must be peaceful nature, memories, skies, or memorial aesthetics suitable for Pexels stock video search."
+            )
+        else:
+            system_content = "You output strictly valid JSON arrays without markdown blocks."
+            guideline = f"Create a short 5-scene script for a YouTube Short about this topic:\nTopic: {topic}\nKeep the 'text' fields very short and concise."
+
         prompt = (
             "Output ONLY a valid JSON array and nothing else. No markdown formatting, no explanations.\n"
-            "Create a short 5-scene script for a YouTube Short about this topic:\n"
-            f"Topic: {topic}\n\n"
-            "Keep the 'text' fields very short and concise.\n"
+            f"{guideline}\n\n"
             "Required JSON format:\n"
             "[\n"
             "    {\n"
@@ -59,7 +75,7 @@ class ContentBrain:
             "        \"text\": \"Short sentence here...\",\n"
             "        \"visual_1\": \"search term 1\",\n"
             "        \"visual_2\": \"search term 2\",\n"
-            "        \"mood\": \"intriguing\"\n"
+            "        \"mood\": \"emotional\"\n"
             "    }\n"
             "]"
         )
@@ -68,11 +84,11 @@ class ContentBrain:
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[
-                {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=2000,  # Nostettu tarpeeksi suureksi, ettei katkea kesken!
+            max_tokens=2000,
         )
         
         response_text = completion.choices[0].message.content.strip()
