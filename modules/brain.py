@@ -38,6 +38,7 @@ class ContentBrain:
                 {"role": "user", "content": prompts}
             ],
             temperature=0.8,
+            max_tokens=50,
         )
         topic = completion.choices[0].message.content.strip().replace('"', '')
         print(f"🎯 Selected Topic [{chosen_category}]: {topic}")
@@ -47,14 +48,15 @@ class ContentBrain:
         print(f"📝 Writing script for: {topic}...")
         
         prompt = (
-            "You are a JSON-only API. Output ONLY a valid JSON array and nothing else. No markdown formatting, no explanations.\n"
-            "Create an 8-scene script for a YouTube Short about this topic:\n"
+            "Output ONLY a valid JSON array and nothing else. No markdown formatting, no explanations.\n"
+            "Create a short 5-scene script for a YouTube Short about this topic:\n"
             f"Topic: {topic}\n\n"
+            "Keep the 'text' fields short (max 1-2 sentences per scene). Do not repeat words.\n"
             "Required JSON format:\n"
             "[\n"
             "    {\n"
             "        \"id\": 1,\n"
-            "        \"text\": \"Sentence here...\",\n"
+            "        \"text\": \"Short sentence here...\",\n"
             "        \"visual_1\": \"search term 1\",\n"
             "        \"visual_2\": \"search term 2\",\n"
             "        \"mood\": \"intriguing\"\n"
@@ -66,10 +68,11 @@ class ContentBrain:
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[
-                {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
+                {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks. Keep text concise to avoid token limits."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
+            max_tokens=1000,
         )
         
         response_text = completion.choices[0].message.content.strip()
