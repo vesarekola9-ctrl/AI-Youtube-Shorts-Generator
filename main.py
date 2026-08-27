@@ -43,7 +43,6 @@ def clean_cache():
     """
     print("🧹 Cleaning up temporary files...")
     
-    # 1. Define the specific target folders
     folders_to_clean = [
         os.path.join(os.getcwd(), "assets", "audio_clips"),
         os.path.join(os.getcwd(), "assets", "video_clips"),
@@ -51,41 +50,36 @@ def clean_cache():
     ]
 
     for folder in folders_to_clean:
-        # SAFETY CHECK 1: Ensure folder actually exists
         if not os.path.exists(folder):
             continue
             
-        # SAFETY CHECK 2: Double check we are inside our project "assets" folder
         if "assets" not in folder:
-            print(f"   🚨 SECURITY ALERT: Skipping {folder} because it looks unsafe!")
+            print(f"    🚨 SECURITY ALERT: Skipping {folder} because it looks unsafe!")
             continue
 
-        # Loop through files inside the folder
         for filename in os.listdir(folder):
             file_path = os.path.join(folder, filename)
-            
             try:
                 if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path) # Delete the file
+                    os.unlink(file_path)
                     print(f"     Deleted: {filename}")
                 elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path) # Delete subfolders if any
+                    shutil.rmtree(file_path)
             except Exception as e:
-                print(f"   ❌ Failed to delete {file_path}. Reason: {e}")
+                print(f"    ❌ Failed to delete {file_path}. Reason: {e}")
     
     print("✨ Workspace clean!")
 
 async def main():
-    print("🚀 STARTING AUTOMATION (Artist Promo Mode)...")
+    print("🚀 STARTING AUTOMATION (Artist Music-Only Mode)...")
     
-    # Valitaan satunnainen biisi pohjaksi tai teemaksi
     current_song = random.choice(ARTIST_SONGS)
-    print(f"🎶 Valittu teemabiisi tälle kierrokselle: {current_song['title']}")
+    print(f"🎶 Valittu biisi tälle kierrokselle: {current_song['title']} ({current_song['url']})")
 
-    # 1. BRAIN: Get Script
+    # 1. BRAIN: Get Script/Visual context
     brain = ContentBrain()
     try:
-        topic = f"Musavideo ja tarina kappaleesta {current_song['title']}"
+        topic = f"Musavideo kappaleelle {current_song['title']}"
         script = brain.generate_script(topic)
     except Exception as e:
         print(f"❌ Brain Error: {e}")
@@ -95,32 +89,25 @@ async def main():
         print("❌ Script generation failed.")
         return
 
-    # 2. AUDIO: Generate Voice
-    audio_engine = AudioEngine() 
-    try:
-        script = await audio_engine.process_script(script)
-    except Exception as e:
-        print(f"❌ Audio Error: {e}")
-        return
+    # HUOM: Puheäänen generointi (TTS) ohitettu kokonaan, käytetään vain musiikkia.
 
-    # 3. ASSETS: Get Stock Video
+    # 2. ASSETS: Get Stock Video
     asset_manager = AssetManager()
     assets_map = asset_manager.get_videos(script)
 
-    # 4. COMPOSER: Merge Video + Audio
+    # 3. COMPOSER: Merge Video + Music Track
     composer = Composer()
-
     final_scene_paths = composer.render_all_scenes(script, assets_map)
 
-    # 5. STITCH WITH TRANSITIONS
+    # 4. STITCH WITH TRANSITIONS & ADD MUSIC
     if final_scene_paths:
-        composer.concatenate_with_transitions(final_scene_paths)
+        composer.concatenate_with_transitions(final_scene_paths, music_url=current_song["url"])
         
-        # 6. YOUTUBE UPLOAD
+        # 5. YOUTUBE UPLOAD
         print("🚀 Siirrytään YouTubeen lataamiseen...")
         try:
             uploader = YouTubeUploader()
-            uploader.upload_short("assets/final/final_short.mp4")
+            uploader.upload_short("assets/final/final_short.mp4", description_addon=get_promo_description())
             print("✅ Mainostekstit ja linkit lisätty onnistuneesti!")
         except Exception as e:
             print(f"❌ YouTube Upload Error: {e}")
