@@ -1,6 +1,7 @@
-﻿import os
+import os
 import asyncio
 import shutil
+import subprocess
 from mutagen.wave import WAVE
 
 class AudioEngine:
@@ -18,8 +19,8 @@ class AudioEngine:
             print(f"❌ Error reading audio length: {e}")
             return 5.0
 
-    async def process_script(self, script_data, song_title=None):
-        print(f"🎙️ Valmistellaan taustamusiikki ja kohtaukset ({len(script_data)} kohtausta)...")
+    async def process_script(self, script_data, song_title=None, start_time=0):
+        print(f"🎙️ Valmistellaan taustamusiikki (aloituskohta: {start_time}s)...")
         
         target_audio_path = os.path.join(self.output_dir, "background_music.wav")
         found = False
@@ -30,8 +31,30 @@ class AudioEngine:
                 file_lower = file.lower().replace("ä", "a").replace("ö", "o").replace("å", "a")
                 if safe_name in file_lower or file_lower.startswith(safe_name):
                     source_path = os.path.join(self.songs_dir, file)
-                    shutil.copyfile(source_path, target_audio_path)
-                    print(f"🎵 Löydetty paikallinen biisi: {file} -> Asetettu taustamusiikiksi.")
+                    
+                    # Leikataan FFmegin avulla halutusta kohdasta tarkka pätkä taustamusiikiksi
+                    print(f"🎵 Leikataan biisistä '{file}' kertosäe kohdasta {start_time}s...")
+                    cut_cmd = [
+                        "ffmpeg", "-y",
+                        "-ss", str(start_time),
+                        "-i", source_path,
+                        "-t", "30",  # Shortsien mittainen pätkä (30 sekuntia)
+                        "-c", "copy",
+                        target_audio_path
+                    ]
+                    result = subprocess.run(cut_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    
+                    if result.returncode != 0:
+                        cut_cmd_reencode = [
+                            "ffmpeg", "-y",
+                            "-ss", str(start_time),
+                            "-i", source_path,
+                            "-t", "30",
+                            target_audio_path
+                        ]
+                        subprocess.run(cut_cmd_reencode, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    print(f"✅ Taustamusiikki rajattu onnistuneesti!")
                     found = True
                     break
 
