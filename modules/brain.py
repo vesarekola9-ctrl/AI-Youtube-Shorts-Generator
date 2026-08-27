@@ -14,7 +14,6 @@ def _get_client():
 
 class ContentBrain:
     def get_trending_topic(self):
-        # Satunnaistetaan kategoria, jotta aiheet vaihtuvat aina radikaalisti
         categories = [
             "mind-blowing science facts",
             "unsolved historical mysteries",
@@ -33,7 +32,7 @@ class ContentBrain:
         
         client = _get_client()
         completion = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",  # <-- KORJATTU TÄHÄN
+            model="llama-3.3-70b-versatile",  # <-- Päivitetty toimivaan malliin
             messages=[
                 {"role": "system", "content": "You are a creative content curator who loves obscure, fascinating, and unique topics."},
                 {"role": "user", "content": prompts}
@@ -65,7 +64,7 @@ class ContentBrain:
 
         client = _get_client()
         completion = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",  # <-- KORJATTU MYÖS TÄHÄN
+            model="llama-3.3-70b-versatile",  # <-- Päivitetty myös tähän
             messages=[
                 {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
                 {"role": "user", "content": prompt}
