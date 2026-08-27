@@ -1,6 +1,7 @@
 import os
 import asyncio
 import subprocess
+import sys
 from mutagen.mp3 import MP3
 
 class AudioEngine:
@@ -18,7 +19,7 @@ class AudioEngine:
 
     async def download_artist_song(self, song_url, output_filename="background_music.mp3"):
         """
-        Lataa artistin biisin suoraan YouTubesta mp3-muotoon taustamusiikiksi.
+        Lataa artistin biisin suoraan YouTubesta mp3-muotoon taustamusiikiksi Pythonin yt_dlp-modulilla.
         """
         output_path = os.path.join(self.output_dir, output_filename)
         
@@ -29,9 +30,9 @@ class AudioEngine:
 
         print(f"📥 Ladataan artistin biisi YouTubesta: {song_url}...")
         
-        # Käytetään yt-dlp komentoa äänen lataamiseen
+        # Käytetään sys.executable jotta komento käyttää varmasti oikeaa Python-ympäristöä ja yt-dlp modulia
         command = [
-            "yt-dlp",
+            sys.executable, "-m", "yt_dlp",
             "-x", "--audio-format", "mp3",
             "--audio-quality", "0",
             "-o", output_path.replace(".mp3", ".%(ext)s"),
@@ -61,23 +62,20 @@ class AudioEngine:
 
     async def process_script(self, script_data, song_url=None):
         """
-        Korvaa vanhan TTS-prosessin. Asettaa jokaiselle kohtaukselle keston
-        ja huolehtii, että taustamusiikki on valmiina.
+        Valmistelee kohtaukset ja lataa taustamusiikin biisin urlista.
         """
         print(f"🎙️ Valmistellaan musiikki ja kohtaukset ({len(script_data)} kohtausta)...")
         
-        # Ladataan biisi taustalle jos url on annettu
         if song_url:
             try:
                 music_path = await self.download_artist_song(song_url)
             except Exception as e:
                 print(f"⚠️ Musiikin lataus epäonnistui, jatketaan ilman erillistä biisiä: {e}")
 
-        # Annetaan jokaiselle skriptin kohtaukselle tasainen kesto (esim. 5 sekuntia per kohtaus)
         for scene in script_data:
             scene_id = scene['id']
-            scene['audio_path'] = None # Ei erillistä puhetta
-            scene['duration'] = 5.0 # 5 sekuntia per skene
+            scene['audio_path'] = None 
+            scene['duration'] = 5.0 
             print(f"   ✅ Scene {scene_id}: Kesto asetettu (5.00s)")
 
         return script_data
