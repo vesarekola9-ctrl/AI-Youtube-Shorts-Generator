@@ -18,27 +18,27 @@ SPOTIFY_ARTIST_URL = "https://open.spotify.com/artist/2Dfd0WHvgWt2kRsxfbAkxl?si=
 CHANNEL_HANDLE = "@FuturaBot1"
 
 ARTIST_SONGS = [
-    {"title": "Nuori elämä", "url": "https://www.youtube.com/watch?v=W4XruKLK2-c"},
-    {"title": "Isä", "url": "https://www.youtube.com/watch?v=gkpRCcQtSzo"},
-    {"title": "Äiti", "url": "https://www.youtube.com/watch?v=OxYVgqrJYD8"},
-    {"title": "Jäljet tunturissa", "url": "https://www.youtube.com/watch?v=nMihlPyXs8U"}
+    {"title": "nuori_elama", "display_name": "Nuori elämä", "url": "https://www.youtube.com/watch?v=W4XruKLK2-c"},
+    {"title": "isa", "display_name": "Isä", "url": "https://www.youtube.com/watch?v=gkpRCcQtSzo"},
+    {"title": "aiti", "display_name": "Äiti", "url": "https://www.youtube.com/watch?v=OxYVgqrJYD8"},
+    {"title": "jaljet_tunturissa", "display_name": "Jäljet tunturissa", "url": "https://www.youtube.com/watch?v=nMihlPyXs8U"}
 ]
 
 def get_unique_title_and_description(song):
     titles = [
-        f"Fiilistelyä: {song['title']} #Shorts",
-        f"Musafiiliksiä - {song['title']} #Music",
-        f"Tänään kuuntelussa: {song['title']} #Shorts",
-        f"{song['title']} - Ota mukava asento #Shorts"
+        f"Fiilistelyä: {song['display_name']} #Shorts",
+        f"Musafiiliksiä - {song['display_name']} #Music",
+        f"Tänään kuuntelussa: {song['display_name']} #Shorts",
+        f"{song['display_name']} - Ota mukava asento #Shorts"
     ]
     chosen_title = random.choice(titles)
     
     description = (
-        f"🎵 Tällä videolla fiilistellään biisiä: {song['title']}\n"
+        f"🎵 Tällä videolla fiilistellään biisiä: {song['display_name']}\n"
         f"🎧 Kuuntele artistiprofiili Spotifyssa: {SPOTIFY_ARTIST_URL}\n"
         f"👉 Tilaa kanava ja tsekkaa kaikki videot: {ARTIST_CHANNEL_URL}\n"
         f"Alkuperäinen kappale: {song['url']}\n\n"
-        f"#Shorts #Music #{song['title'].replace(' ', '')}"
+        f"#Shorts #Music #{song['display_name'].replace(' ', '')}"
     )
     return chosen_title, description
 
@@ -65,17 +65,17 @@ def clean_cache():
     print("✨ Workspace clean!")
 
 async def main():
-    print("🚀 STARTING AUTOMATION (Dynamic Title & Artist Music Mode)...")
+    print("🚀 STARTING AUTOMATION (Local WAV Artist Music Mode)...")
     
     current_song = random.choice(ARTIST_SONGS)
     video_title, video_desc = get_unique_title_and_description(current_song)
-    print(f"🎶 Valittu biisi: {current_song['title']} ({current_song['url']})")
+    print(f"🎶 Valittu biisi: {current_song['display_name']} ({current_song['title']})")
     print(f"📌 Generoitu otsikko: {video_title}")
 
     # 1. BRAIN: Get Script / Scenes structure
     brain = ContentBrain()
     try:
-        topic = f"Musavideo kappaleelle {current_song['title']}"
+        topic = f"Musavideo kappaleelle {current_song['display_name']}"
         script = brain.generate_script(topic)
     except Exception as e:
         print(f"❌ Brain Error: {e}")
@@ -85,10 +85,10 @@ async def main():
         print("❌ Script generation failed.")
         return
 
-    # 2. AUDIO: Download and setup artist song for the background
+    # 2. AUDIO: Map local WAV file as background music
     audio_engine = AudioEngine()
     try:
-        script = await audio_engine.process_script(script, song_url=current_song["url"])
+        script = await audio_engine.process_script(script, song_title=current_song["title"])
     except Exception as e:
         print(f"⚠️ Audio/Music Setup Warning: {e}")
 
@@ -109,7 +109,7 @@ async def main():
         try:
             uploader = YouTubeUploader()
             uploader.upload_short("assets/final/final_short.mp4", title=video_title, description=video_desc)
-            print("✅ Video ladattu onnistuneesti dynaamisella nimellä, kuvauksella ja musiikilla!")
+            print("✅ Video ladattu onnistuneesti dynaamisella nimellä, kuvauksella ja omalla biisillä!")
         except Exception as e:
             print(f"❌ YouTube Upload Error: {e}")
 
