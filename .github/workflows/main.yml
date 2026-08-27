@@ -1,4 +1,4 @@
-﻿name: Generate YouTube Short
+name: Generate YouTube Short
 
 on:
   schedule:
@@ -32,7 +32,7 @@ jobs:
 
           echo "📦 Asennetaan Python-paketit..."
           python -m pip install --upgrade pip
-          pip install groq google-genai edge-tts requests ffmpeg-python mutagen google-auth-oauthlib google-auth-httplib2 google-api-python-client python-dotenv
+          pip install groq google-genai edge-tts requests ffmpeg-python mutagen google-auth-oauthlib google-auth-httplib2 google-api-python-client python-dotenv yt-dlp
 
           echo "📝 Luodaan .env- ja konfiguraatiotiedostot..."
           echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > .env
