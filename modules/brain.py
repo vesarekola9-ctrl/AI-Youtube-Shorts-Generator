@@ -32,7 +32,7 @@ class ContentBrain:
         
         client = _get_client()
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # <-- Päivitetty toimivaan malliin
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": "You are a creative content curator who loves obscure, fascinating, and unique topics."},
                 {"role": "user", "content": prompts}
@@ -64,7 +64,7 @@ class ContentBrain:
 
         client = _get_client()
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # <-- Päivitetty myös tähän
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": "You output strictly valid JSON arrays without markdown blocks."},
                 {"role": "user", "content": prompt}
