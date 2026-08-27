@@ -4,6 +4,7 @@ os.environ["PATH"] += os.pathsep + "/usr/bin"
 
 import asyncio
 import shutil
+import random
 from modules.brain import ContentBrain
 from modules.asset_manager import AssetManager
 from modules.audio import AudioEngine
@@ -11,7 +12,7 @@ from modules.composer import Composer
 from modules.upload import YouTubeUploader
 
 # =====================================================================
-# ARTISTIN KANAVA, SPOTIFY JA BIISILISTA (UUSI LISÄYS)
+# ARTISTIN KANAVA, SPOTIFY JA BIISILISTA
 # =====================================================================
 ARTIST_CHANNEL_URL = "https://www.youtube.com/channel/UC_yIS6wcTTaubHKBXHhFvYQ"
 SPOTIFY_ARTIST_URL = "https://open.spotify.com/artist/2Dfd0WHvgWt2kRsxfbAkxl?si=lSD1kv3nTpeyram0drBKZg"
@@ -81,7 +82,7 @@ async def main():
     current_song = random.choice(ARTIST_SONGS)
     print(f"🎶 Valittu teemabiisi tälle kierrokselle: {current_song['title']}")
 
-    # 1. BRAIN: Get Script (Voit halutessasi ujuttaa biisin nimen myös trendi-hakuun tai promptiin)
+    # 1. BRAIN: Get Script
     brain = ContentBrain()
     try:
         topic = f"Musavideo ja tarina kappaleesta {current_song['title']}"
@@ -115,12 +116,10 @@ async def main():
     if final_scene_paths:
         composer.concatenate_with_transitions(final_scene_paths)
         
-        # 6. YOUTUBE UPLOAD (Lisätty promo-tekstit mukaan)
+        # 6. YOUTUBE UPLOAD
         print("🚀 Siirrytään YouTubeen lataamiseen...")
         try:
             uploader = YouTubeUploader()
-            # Jos YouTubeUploader tukee kuvausta/tekstiä, voit lähettää sen mukana:
-            # (Jos uploader.upload_short ottaa vastaan vain polun, voit varmistaa että uploader-moduuli lisää kuvaukseen get_promo_description())
             uploader.upload_short("assets/final/final_short.mp4")
             print("✅ Mainostekstit ja linkit lisätty onnistuneesti!")
         except Exception as e:
