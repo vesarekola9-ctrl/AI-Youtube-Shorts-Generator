@@ -11,17 +11,37 @@ from modules.composer import Composer
 from modules.upload import YouTubeUploader
 
 # =====================================================================
-# ARTISTIN KANAVA, SPOTIFY JA BIISILISTA
+# ARTISTIN KANAVA, SPOTIFY JA BIISILISTA + ALOITUSKOHDAT (sekunteina)
 # =====================================================================
 ARTIST_CHANNEL_URL = "https://www.youtube.com/channel/UC_yIS6wcTTaubHKBXHhFvYQ"
 SPOTIFY_ARTIST_URL = "https://open.spotify.com/artist/2Dfd0WHvgWt2kRsxfbAkxl?si=lSD1kv3nTpeyram0drBKZg"
 CHANNEL_HANDLE = "@FuturaBot1"
 
 ARTIST_SONGS = [
-    {"title": "nuori_elama", "display_name": "Nuori elämä", "url": "https://www.youtube.com/watch?v=W4XruKLK2-c"},
-    {"title": "isa", "display_name": "Isä", "url": "https://www.youtube.com/watch?v=gkpRCcQtSzo"},
-    {"title": "aiti", "display_name": "Äiti", "url": "https://www.youtube.com/watch?v=OxYVgqrJYD8"},
-    {"title": "jaljet_tunturissa", "display_name": "Jäljet tunturissa", "url": "https://www.youtube.com/watch?v=nMihlPyXs8U"}
+    {
+        "title": "nuori_elama", 
+        "display_name": "Nuori elämä", 
+        "url": "https://www.youtube.com/watch?v=W4XruKLK2-c",
+        "start_time": 94  # 1:34
+    },
+    {
+        "title": "isa", 
+        "display_name": "Isä", 
+        "url": "https://www.youtube.com/watch?v=gkpRCcQtSzo",
+        "start_time": 60  # 1:00
+    },
+    {
+        "title": "aiti", 
+        "display_name": "Äiti", 
+        "url": "https://www.youtube.com/watch?v=OxYVgqrJYD8",
+        "start_time": 143 # 2:23
+    },
+    {
+        "title": "jaljet_tunturissa", 
+        "display_name": "Jäljet tunturissa", 
+        "url": "https://www.youtube.com/watch?v=nMihlPyXs8U",
+        "start_time": 170 # 2:50
+    }
 ]
 
 def get_unique_title_and_description(song):
@@ -35,7 +55,7 @@ def get_unique_title_and_description(song):
     
     description = (
         f"🎵 Tällä videolla fiilistellään biisiä: {song['display_name']}\n"
-        f"🎧 Kuuntele artistiprofiili Spotifyssa: {SPOTIFY_ARTIST_URL}\n"
+        f"🎧 Kuuntele koko biisi ja artistiprofiili Spotifyssa: {SPOTIFY_ARTIST_URL}\n"
         f"👉 Tilaa kanava ja tsekkaa kaikki videot: {ARTIST_CHANNEL_URL}\n"
         f"Alkuperäinen kappale: {song['url']}\n\n"
         f"#Shorts #Music #{song['display_name'].replace(' ', '')}"
@@ -65,11 +85,11 @@ def clean_cache():
     print("✨ Workspace clean!")
 
 async def main():
-    print("🚀 STARTING AUTOMATION (Local WAV Artist Music Mode)...")
+    print("🚀 STARTING AUTOMATION (Smart Start-Time WAV Music Mode)...")
     
     current_song = random.choice(ARTIST_SONGS)
     video_title, video_desc = get_unique_title_and_description(current_song)
-    print(f"🎶 Valittu biisi: {current_song['display_name']} ({current_song['title']})")
+    print(f"🎶 Valittu biisi: {current_song['display_name']} (Aloituskohta: {current_song['start_time']}s)")
     print(f"📌 Generoitu otsikko: {video_title}")
 
     # 1. BRAIN: Get Script / Scenes structure
@@ -85,10 +105,14 @@ async def main():
         print("❌ Script generation failed.")
         return
 
-    # 2. AUDIO: Map local WAV file as background music
+    # 2. AUDIO: Map local WAV file and crop from start_time
     audio_engine = AudioEngine()
     try:
-        script = await audio_engine.process_script(script, song_title=current_song["title"])
+        script = await audio_engine.process_script(
+            script, 
+            song_title=current_song["title"], 
+            start_time=current_song["start_time"]
+        )
     except Exception as e:
         print(f"⚠️ Audio/Music Setup Warning: {e}")
 
@@ -109,7 +133,7 @@ async def main():
         try:
             uploader = YouTubeUploader()
             uploader.upload_short("assets/final/final_short.mp4", title=video_title, description=video_desc)
-            print("✅ Video ladattu onnistuneesti dynaamisella nimellä, kuvauksella ja omalla biisillä!")
+            print("✅ Video ladattu onnistuneesti dynaamisella nimellä, kuvauksella ja kohdennetulla musiikilla!")
         except Exception as e:
             print(f"❌ YouTube Upload Error: {e}")
 
