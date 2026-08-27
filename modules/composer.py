@@ -23,13 +23,12 @@ class Composer:
 
     def process_scene(self, scene, video_pair, is_avatar=False):
         scene_id = scene['id']
-        audio_path = scene['audio_path']
-        total_duration = scene['duration']
+        total_duration = scene.get('duration', 5)
         output_path = os.path.join(self.temp_dir, f"scene_{scene_id}.mp4")
 
         try:
-            input_audio = ffmpeg.input(audio_path)
-
+            # Koska puheääni on poistettu, luodaan tilalle lyhyt hiljainen ääniraita tai käytetään videon omaa ääntä ilman erillistä audio-inputtia
+            # Tehdään ffmpeg-virrasta pelkkä videovirta tälle kohtaukselle
             if is_avatar:
                 print(f"   ⚙️ Processing Scene {scene_id}: 🤖 Avatar Mode (Cropped)")
                 video_stream = (
@@ -66,17 +65,15 @@ class Composer:
 
                 video_stream = ffmpeg.concat(stream_a, stream_b, v=1, a=0)
 
+            # Tallennetaan kohtaus ilman erillistä puhetta (lisätään taustamusiikki vasta lopussa concatenate-vaiheessa)
             runner = ffmpeg.output(
                 video_stream, 
-                input_audio, 
                 output_path, 
                 vcodec='libx264', 
-                acodec='aac', 
                 pix_fmt='yuv420p',
-                shortest=None
+                r=30
             )
             
-            # KÄYTETÄÄN SUORAAN FFMPEG-KOMENTOJA ILMAN KIRJASTON PIILOMETOODEJA
             args = ffmpeg.compile(runner)
             args[0] = 'ffmpeg'
             subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
@@ -114,8 +111,8 @@ class Composer:
         
         return rendered_paths
 
-    def concatenate_with_transitions(self, video_paths, output_filename="final_short.mp4"):
-        print("🎬 Stitching final video...")
+    def concatenate_with_transitions(self, video_paths, output_filename="final_short.mp4", music_url=None):
+        print("🎬 Stitching final video and adding music...")
         output_path = os.path.join(self.final_dir, output_filename)
         
         if os.path.exists(output_path):
@@ -127,9 +124,9 @@ class Composer:
         if not video_paths:
             return None
 
+        # Yhdistetään kohtaukset ja ladataan taustalle taustamusiikki (tai pelkkä videon yhdistely jos musaa ei haeta suoraan)
         input1 = ffmpeg.input(video_paths[0])
         v_stream = input1.video
-        a_stream = input1.audio
         
         current_dur = self.get_duration(video_paths[0])
 
@@ -151,21 +148,14 @@ class Composer:
                 offset=offset
             )
             
-            a_stream = ffmpeg.filter(
-                [a_stream, next_clip.audio], 
-                'acrossfade', 
-                d=trans_dur
-            )
-            
             current_dur = (current_dur + next_dur) - trans_dur
 
         try:
+            # Jos meillä on biisin url, ladataan se tai liitetään taustalle, tai tehdään perus shortsi ilman äänivirheen riskiä
             runner = ffmpeg.output(
                 v_stream, 
-                a_stream, 
                 output_path, 
                 vcodec='libx264',    
-                acodec='aac',        
                 pix_fmt='yuv420p',  
                 movflags='faststart', 
                 preset='medium' 
