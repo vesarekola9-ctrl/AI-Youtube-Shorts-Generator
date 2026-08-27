@@ -1,6 +1,5 @@
 import os
 import random
-import sys
 import subprocess
 import ffmpeg
 
@@ -8,7 +7,6 @@ class Composer:
     def __init__(self):
         self.temp_dir = os.path.join(os.getcwd(), "assets", "temp")
         self.final_dir = os.path.join(os.getcwd(), "assets", "final")
-        self.avatar_path = os.path.join(os.getcwd(), "assets", "avatar", "avatars.mp4")
         self.audio_dir = os.path.join(os.getcwd(), "assets", "audio_clips")
         
         os.makedirs(self.temp_dir, exist_ok=True)
@@ -22,47 +20,35 @@ class Composer:
         except:
             return 0.0
 
-    def process_scene(self, scene, video_pair, is_avatar=False):
+    def process_scene(self, scene, video_pair):
         scene_id = scene['id']
         total_duration = scene.get('duration', 5)
         output_path = os.path.join(self.temp_dir, f"scene_{scene_id}.mp4")
 
         try:
-            if is_avatar:
-                print(f"   ⚙️ Processing Scene {scene_id}: 🤖 Avatar Mode (Cropped)")
-                video_stream = (
-                    ffmpeg.input(video_pair[0], stream_loop=-1)
-                    .trim(duration=total_duration + 0.5)
-                    .setpts('PTS-STARTPTS')
-                    .filter('crop', 'iw', 'ih-150', 0, 0) 
-                    .filter('scale', 1080, 1920, force_original_aspect_ratio='increase')
-                    .filter('crop', 1080, 1920)
-                    .filter('fps', fps=30, round='up')
-                )
-            else:
-                print(f"   ⚙️ Processing Scene {scene_id}: 🎞️ A/B Split Mode")
-                path_a, path_b = video_pair
-                
-                duration_a = total_duration / 2
-                duration_b = (total_duration / 2) + 0.5 
+            print(f"   ⚙️ Processing Scene {scene_id}: 🎞️ A/B Split Mode (Nature & Memories)")
+            path_a, path_b = video_pair
+            
+            duration_a = total_duration / 2
+            duration_b = (total_duration / 2) + 0.5 
 
-                stream_a = (
-                    ffmpeg.input(path_a, stream_loop=-1)
-                    .trim(duration=duration_a)
-                    .setpts('PTS-STARTPTS')
-                    .filter('scale', 1080, 1920).filter('crop', 1080, 1920)
-                    .filter('fps', fps=30, round='up')
-                )
+            stream_a = (
+                ffmpeg.input(path_a, stream_loop=-1)
+                .trim(duration=duration_a)
+                .setpts('PTS-STARTPTS')
+                .filter('scale', 1080, 1920).filter('crop', 1080, 1920)
+                .filter('fps', fps=30, round='up')
+            )
 
-                stream_b = (
-                    ffmpeg.input(path_b, stream_loop=-1)
-                    .trim(duration=duration_b)
-                    .setpts('PTS-STARTPTS')
-                    .filter('scale', 1080, 1920).filter('crop', 1080, 1920)
-                    .filter('fps', fps=30, round='up')
-                )
+            stream_b = (
+                ffmpeg.input(path_b, stream_loop=-1)
+                .trim(duration=duration_b)
+                .setpts('PTS-STARTPTS')
+                .filter('scale', 1080, 1920).filter('crop', 1080, 1920)
+                .filter('fps', fps=30, round='up')
+            )
 
-                video_stream = ffmpeg.concat(stream_a, stream_b, v=1, a=0)
+            video_stream = ffmpeg.concat(stream_a, stream_b, v=1, a=0)
 
             runner = ffmpeg.output(
                 video_stream, 
@@ -83,27 +69,14 @@ class Composer:
 
     def render_all_scenes(self, script_data, video_pairs):
         rendered_paths = []
-        avatar_indices = []
-        
-        if len(script_data) >= 4 and os.path.exists(self.avatar_path):
-            valid_range = list(range(1, len(script_data) - 1))
-            count_to_pick = 2 if len(valid_range) >= 2 else 1
-            avatar_indices = random.sample(valid_range, count_to_pick)
-            avatar_indices.sort()
-            human_readable_indices = [i + 1 for i in avatar_indices]
-            print(f"🎲 Avatar set for Scenes: {human_readable_indices}")
+        print("🎬 Luodaan kohtaukset pelkillä rauhallisilla maisema- ja muistovideoilla...")
 
         for i, scene in enumerate(script_data):
             current_pair = video_pairs[i]
-            is_avatar = False
-
-            if i in avatar_indices:
-                current_pair = (self.avatar_path, None)
-                is_avatar = True
-            elif current_pair is None:
+            if current_pair is None:
                 continue 
 
-            output_path = self.process_scene(scene, current_pair, is_avatar)
+            output_path = self.process_scene(scene, current_pair)
             if output_path:
                 rendered_paths.append(output_path)
         
@@ -122,7 +95,6 @@ class Composer:
         if not video_paths:
             return None
 
-        # Yhdistetään siirtymät videovirtaan
         input1 = ffmpeg.input(video_paths[0])
         v_stream = input1.video
         current_dur = self.get_duration(video_paths[0])
@@ -147,7 +119,6 @@ class Composer:
             
             current_dur = (current_dur + next_dur) - trans_dur
 
-        # Etsitään paikallinen background_music.wav taustamusiikiksi
         bg_audio_path = os.path.join(self.audio_dir, "background_music.wav")
         has_audio = os.path.exists(bg_audio_path)
 
@@ -164,11 +135,10 @@ class Composer:
                     acodec='aac',
                     pix_fmt='yuv420p',
                     movflags='faststart',
-                    shortest=None,  # Leikkaa videon tai audion mukaan kumpi loppuu ensin
+                    shortest=None,
                     preset='medium'
                 )
             else:
-                print("⚠️ Varoitus: background_music.wav ei löytynyt, luodaan video ilman ääntä.")
                 runner = ffmpeg.output(
                     v_stream, 
                     output_path, 
