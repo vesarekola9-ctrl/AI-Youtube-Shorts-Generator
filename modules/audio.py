@@ -1,34 +1,12 @@
 import os
 import asyncio
-import edge_tts
+import subprocess
 from mutagen.mp3 import MP3
 
 class AudioEngine:
-    def __init__(self, voice="en-US-AvaNeural"):
-        self.voice = voice
+    def __init__(self):
         self.output_dir = os.path.join(os.getcwd(), "assets", "audio_clips")
         os.makedirs(self.output_dir, exist_ok=True)
-
-    async def generate_audio(self, text, output_filename, retries=3):
-        """
-        Generates MP3 with retry logic to handle connection drops.
-        """
-        output_path = os.path.join(self.output_dir, output_filename)
-        
-        for attempt in range(retries):
-            try:
-                # Rate +10% for engagement
-                communicate = edge_tts.Communicate(text, self.voice, rate="+10%")
-                await communicate.save(output_path)
-                return output_path
-            
-            except Exception as e:
-                print(f"      ⚠️ Audio Error (Attempt {attempt+1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(2) # Wait 2 seconds before retrying
-                else:
-                    print("      ❌ Failed to generate audio after max retries.")
-                    raise e # Re-raise error if all retries fail
 
     def get_audio_duration(self, file_path):
         try:
@@ -36,35 +14,70 @@ class AudioEngine:
             return audio.info.length
         except Exception as e:
             print(f"❌ Error reading audio length: {e}")
-            return 0.0
+            return 5.0 # Oletuskesto jos lukeminen epäonnistuu
 
-    async def process_script(self, script_data):
-        print(f"🎙️ Starting Audio Generation for {len(script_data)} scenes...")
+    async def download_artist_song(self, song_url, output_filename="background_music.mp3"):
+        """
+        Lataa artistin biisin suoraan YouTubesta mp3-muotoon taustamusiikiksi.
+        """
+        output_path = os.path.join(self.output_dir, output_filename)
         
+        # Jos biisi on jo ladattu, ei ladata turhaan uudestaan
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 10000:
+            print(f"🎵 Biisi löytyy valmiina: {output_path}")
+            return output_path
+
+        print(f"📥 Ladataan artistin biisi YouTubesta: {song_url}...")
+        
+        # Käytetään yt-dlp komentoa äänen lataamiseen
+        command = [
+            "yt-dlp",
+            "-x", "--audio-format", "mp3",
+            "--audio-quality", "0",
+            "-o", output_path.replace(".mp3", ".%(ext)s"),
+            song_url
+        ]
+
+        try:
+            process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if process.returncode != 0:
+                print(f"⚠️ yt-dlp varoitus/virhe: {process.stderr}")
+            
+            # Varmistetaan tiedoston olemassaolo
+            if os.path.exists(output_path):
+                print(f"✅ Biisi ladattu onnistuneesti: {output_path}")
+                return output_path
+            else:
+                # Jos tiedostopääte on eri, etsitään kansiosta
+                for file in os.listdir(self.output_dir):
+                    if file.startswith("background_music"):
+                        found_path = os.path.join(self.output_dir, file)
+                        return found_path
+                        
+                raise RuntimeError("Äänitiedoston lataus epäonnistui, tiedostoa ei löytynyt.")
+        except Exception as e:
+            print(f"❌ Virhe biisin latauksessa: {e}")
+            raise e
+
+    async def process_script(self, script_data, song_url=None):
+        """
+        Korvaa vanhan TTS-prosessin. Asettaa jokaiselle kohtaukselle keston
+        ja huolehtii, että taustamusiikki on valmiina.
+        """
+        print(f"🎙️ Valmistellaan musiikki ja kohtaukset ({len(script_data)} kohtausta)...")
+        
+        # Ladataan biisi taustalle jos url on annettu
+        if song_url:
+            try:
+                music_path = await self.download_artist_song(song_url)
+            except Exception as e:
+                print(f"⚠️ Musiikin lataus epäonnistui, jatketaan ilman erillistä biisiä: {e}")
+
+        # Annetaan jokaiselle skriptin kohtaukselle tasainen kesto (esim. 5 sekuntia per kohtaus)
         for scene in script_data:
             scene_id = scene['id']
-            text = scene['text']
-            filename = f"voice_{scene_id}.mp3"
-            
-            try:
-                # Generate Audio
-                file_path = await self.generate_audio(text, filename)
-                
-                # Get Duration
-                duration = self.get_audio_duration(file_path)
-                
-                # Update Scene Data
-                scene['audio_path'] = file_path
-                scene['duration'] = duration
-                
-                print(f"   ✅ Scene {scene_id}: {duration:.2f}s generated.")
-                
-                # CRITICAL: Sleep for 1 second to be polite to the API
-                # This prevents the "Connection Timeout" error
-                await asyncio.sleep(1) 
-                
-            except Exception as e:
-                print(f"   ❌ Skipping Scene {scene_id} due to audio error.")
-                continue
-            
+            scene['audio_path'] = None # Ei erillistä puhetta
+            scene['duration'] = 5.0 # 5 sekuntia per skene
+            print(f"   ✅ Scene {scene_id}: Kesto asetettu (5.00s)")
+
         return script_data
